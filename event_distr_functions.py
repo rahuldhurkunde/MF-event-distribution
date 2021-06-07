@@ -1,13 +1,22 @@
 import matplotlib.pyplot as plt
+import scipy
 import scipy.stats as stats
 import pycbc
 from pycbc import events
 import numpy as np
 
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
+def find_convergent_SNR(og_snr, red_snr, og_counts, red_counts, tolerance):
+	f_red = scipy.interpolate.interp1d(red_snr, red_counts)
+	f_og = scipy.interpolate.interp1d(og_snr, og_counts)
+	x_new = np.linspace(np.min(red_snr), np.max(red_snr), 500)
+	idx = (np.abs(og_snr - red_snr[0])).argmin()
+	for i in range(len(x_new)):
+		if (  ( 1 - f_red(x_new[i])/f_og(x_new[i]) ) < tolerance):
+			#plt.axvline(x = x_new[i], color='red')
+			print ('Convergent SNR is ', x_new[i])
+			conv_SNR = x_new[i]
+			break
+	return conv_SNR 
 
 
 def calculate_events_above_threshold(series, values):
@@ -15,6 +24,11 @@ def calculate_events_above_threshold(series, values):
 	for i in range(len(values)):
 		events[i] = np.sum(series >= values[i])	
 	return events
+
+def accumulate_triggers_hierarchical(SNR, filename, index, window):
+	a = np.loadtxt(filename)
+	for i in range(0, int(index*window)):
+		SNR.append(a[i])
 
 def accumulate_triggers(SNR, filename):
 	a = np.loadtxt(filename)
@@ -29,24 +43,26 @@ def non_hierarchical_distribution(ax, SNR, no_realizations):
 	#thresholds = np.linspace(np.min(SNR), np.max(SNR), 1000)
 	snrs  = np.sort(SNR)
 	counts = np.arange(len(snrs), 0, -1)
-	ax.plot(snrs, counts, 'x', color='black', label = 'Without hierarchical')
-	ax.set_yscale('log')
+	ax.plot(snrs, counts,  color='black', label = 'Without hierarchical')
 	plt.xlabel("SNR")
 	plt.ylabel("No. of events per sec")
 	plt.grid()
 	#plt.savefig("FAP_only_noise.png", dpi=600)
 	#np.savetxt('first_step_nlouder_data.txt', [thresholds, n_louder/128])
+	return snrs, counts
 
-def hierarchical_distribution(ax, SNR, no_realizations, cutoff):
+def hierarchical_distribution(ax, SNR, og_snr, og_counts, no_realizations, cutoff, conv_tol):
 	SNR = np.array(SNR)
 	snrs  = np.sort(SNR)
 	counts = np.arange(len(snrs), 0, -1)
-	ax.plot(snrs, counts, '+', label='Hierarchical %0.1f' %cutoff)
-	ax.set_yscale('log')
-	plt.xlabel("SNR")
-	plt.ylabel("No. of events per sec")
-	plt.grid()
+
+	conv_SNR = find_convergent_SNR(og_snr, snrs, og_counts, counts, conv_tol)
+	ax.plot(snrs, counts, label='Hierarchical %0.1f' %cutoff)
+#	plt.xlabel("SNR")
+#	plt.ylabel("No. of events per sec")
+#	plt.grid()
 	#np.savetxt('hierarchical_nlouder_data.txt', [thresholds, n_louder/128])
+	return conv_SNR
 
 def theoretical_distribution(ax, no_realizations):
 	#x1 = np.random.normal(0,1,1000000)

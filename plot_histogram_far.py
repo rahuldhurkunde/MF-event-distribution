@@ -11,25 +11,27 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 
 no_realizations = 1
-cutoff = [2.0, 2.5, 3.0]
+#cutoff = [2.0, 2.5, 3.0]
+cutoff = [2.0]
 
 filename = "non_hierarchical_matches/only_noise/snr_1_0" 
 func.accumulate_triggers(SNR, filename)
 
-func.non_hierarchical_distribution(ax, SNR, no_realizations)
-
+og_snr, og_counts = func.non_hierarchical_distribution(ax, SNR, no_realizations)
+conv_tol = 0.01
 for k in cutoff:
 	SNR_hierarchical = []
+	print ('First step cutoff is %f' %k)
 	for i in range(no_realizations):
 		filename_second = "hierarchical_matches/%s/snr_8_%s" % (k, i)
 		func.accumulate_triggers(SNR_hierarchical, filename_second)
-		print (i)
-
-	func.hierarchical_distribution(ax, SNR_hierarchical, no_realizations, k)
+		#print (i)
+	func.hierarchical_distribution(ax, SNR_hierarchical, og_snr, og_counts, no_realizations, k, conv_tol)
+	
 #func.theoretical_distribution(ax, no_realizations)
 plt.yscale('log')
 plt.xlabel('SNR')
-plt.ylabel('Triggers per second')
+plt.ylabel('Triggers')
 plt.legend(loc=8)
 plt.savefig("FAP_hierarchical.png", dpi=600)
 plt.show()

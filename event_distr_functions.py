@@ -11,12 +11,14 @@ def find_convergent_SNR(og_snr, red_snr, og_counts, red_counts, tolerance):
 	x_new = np.linspace(np.min(red_snr), np.max(red_snr), 500)
 	idx = (np.abs(og_snr - red_snr[0])).argmin()
 	for i in range(len(x_new)):
+		#print("Works", i, x_new[i])
 		if (  ( 1 - f_red(x_new[i])/f_og(x_new[i]) ) < tolerance):
 			#plt.axvline(x = x_new[i], color='red')
-			print ('Convergent SNR is ', x_new[i])
+			print ('Convergent SNR is ', x_new[i], 'No. of triggers', f_red(x_new[i]))
 			conv_SNR = x_new[i]
+			conv_triggers = f_red(x_new[i])
 			break
-	return conv_SNR 
+	return conv_SNR, conv_triggers 
 
 
 def calculate_events_above_threshold(series, values):
@@ -56,13 +58,13 @@ def hierarchical_distribution(ax, SNR, og_snr, og_counts, no_realizations, cutof
 	snrs  = np.sort(SNR)
 	counts = np.arange(len(snrs), 0, -1)
 
-	conv_SNR = find_convergent_SNR(og_snr, snrs, og_counts, counts, conv_tol)
-	ax.plot(snrs, counts, label='Hierarchical %0.1f' %cutoff)
+	conv_SNR, conv_triggers = find_convergent_SNR(og_snr, snrs, og_counts, counts, conv_tol)
+	#ax.plot(snrs, counts, label='Hierarchical %0.1f' %cutoff)
 #	plt.xlabel("SNR")
 #	plt.ylabel("No. of events per sec")
 #	plt.grid()
 	#np.savetxt('hierarchical_nlouder_data.txt', [thresholds, n_louder/128])
-	return conv_SNR
+	return conv_SNR, conv_triggers
 
 def theoretical_distribution(ax, no_realizations):
 	#x1 = np.random.normal(0,1,1000000)

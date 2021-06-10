@@ -11,7 +11,6 @@ def find_convergent_SNR(og_snr, red_snr, og_counts, red_counts, tolerance):
 	x_new = np.linspace(np.min(red_snr), np.max(red_snr), 500)
 	idx = (np.abs(og_snr - red_snr[0])).argmin()
 	for i in range(len(x_new)):
-		#print("Works", i, x_new[i])
 		if (  ( 1 - f_red(x_new[i])/f_og(x_new[i]) ) < tolerance):
 			#plt.axvline(x = x_new[i], color='red')
 			print ('Convergent SNR is ', x_new[i], 'No. of triggers', f_red(x_new[i]))

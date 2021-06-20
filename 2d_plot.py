@@ -27,6 +27,7 @@ def compute_cost(pca, N, templates, window, cutoff, target, triggers, marker):
 	#plt.plot(target, cutoff, linestyle = '', marker = next(marker), label=window)
 	#plt.plot(cutoff, cost, linestyle = '', marker = next(marker), label=window)
 	plt.plot(target, cost, linestyle = '', marker = next(marker), label=window)
+	print("Min cost for window", window, np.min(cost))
 	#plt.plot(target, cost, label=window)
 
 window_array = [2, 4, 8, 16, 32]
@@ -56,5 +57,6 @@ plt.xlabel('Target SNR')
 #plt.ylabel('First-step cutoff')
 plt.ylabel('# operations / $10^9$')
 plt.legend()
-plt.savefig('Costs_vs_target_snr.png', dpi = 600)
+#plt.savefig('Costs_vs_target_snr.png', dpi = 600)
+plt.savefig('temp.png', dpi = 600)
 plt.show()

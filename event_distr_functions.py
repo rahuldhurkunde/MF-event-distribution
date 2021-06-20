@@ -4,19 +4,54 @@ import scipy.stats as stats
 import pycbc
 from pycbc import events
 import numpy as np
+import time
 
-def find_convergent_SNR(og_snr, red_snr, og_counts, red_counts, tolerance):
+
+def stats_indices(SNR, bins):
+	indices = []
+	for i in range(len(bins)):
+		idx = (np.abs(SNR - bins[i])).argmin()
+		indices.append(idx)
+	return indices
+
+def find_target_SNR(og_snr, red_snr, og_counts, red_counts, first_step_cutoff, tolerance, min_cutoff_ind):
+	print("Counts", red_counts[len(red_counts)-1] , og_counts[len(og_counts)-1-min_cutoff_ind], "SNRs", red_snr[len(red_snr)-1] , og_snr[len(og_counts)-1-min_cutoff_ind])
+	if( np.abs(1 - red_counts[len(red_counts)-1] / og_counts[len(og_counts)-1] ) > tolerance):
+		print("SNRs did not converge for SNR %f" %first_step_cutoff)
+		print("Returning zero")
+		conv_SNR = 0 
+		conv_triggers = 0
+
+	else:
+		for i in range(len(red_snr)):
+			ind_og = len(og_snr) - 1 - i
+			ind_red = len(red_snr) - 1 - i
+			print("Ezzz", red_counts[ind_red] , og_counts[ind_og])
+			if( np.abs(1 - red_counts[ind_red]/og_counts[ind_og]) > tolerance):
+				conv_SNR = og_snr[ind_og + 1]
+				conv_triggers = og_counts[ind_og + 1]
+				break
+
+	return conv_SNR, conv_triggers
+
+
+def find_convergent_SNR(og_snr, red_snr, og_counts, red_counts, first_step_cutoff, tolerance):
+	x_new = np.linspace(np.min(red_snr), np.max(red_snr), 200)
 	f_red = scipy.interpolate.interp1d(red_snr, red_counts)
 	f_og = scipy.interpolate.interp1d(og_snr, og_counts)
-	x_new = np.linspace(np.min(red_snr), np.max(red_snr), 500)
-	idx = (np.abs(og_snr - red_snr[0])).argmin()
 	for i in range(len(x_new)):
 		if (  ( 1 - f_red(x_new[i])/f_og(x_new[i]) ) < tolerance):
 			#plt.axvline(x = x_new[i], color='red')
-			print ('Convergent SNR is ', x_new[i], 'No. of triggers', f_red(x_new[i]))
+			#print ('Convergent SNR is ', x_new[i], 'No. of triggers', f_red(x_new[i]))
 			conv_SNR = x_new[i]
 			conv_triggers = f_red(x_new[i])
 			break
+		elif (i == (len(x_new)) -1):
+			print("SNRs did not converge for SNR %f" %first_step_cutoff)
+			print("Returning zero")
+			conv_SNR = 0 
+			conv_triggers = 0
+			
 	return conv_SNR, conv_triggers 
 
 
@@ -33,32 +68,34 @@ def accumulate_triggers_hierarchical(SNR, filename, index, window):
 
 def accumulate_triggers(SNR, filename):
 	a = np.loadtxt(filename)
-	#temp = np.zeros(len(a))
+	temp = np.zeros(len(a))
 	for i in range(len(a)):
 		SNR.append(a[i])
 	#SNR.append(temp)
 	#return SNR
 
-def non_hierarchical_distribution(ax, SNR, no_realizations):
+def non_hierarchical_distribution(ax, SNR):
 	SNR = np.array(SNR)
 	#thresholds = np.linspace(np.min(SNR), np.max(SNR), 1000)
 	snrs  = np.sort(SNR)
 	counts = np.arange(len(snrs), 0, -1)
 	ax.plot(snrs, counts,  color='black', label = 'Without hierarchical')
-	plt.xlabel("SNR")
-	plt.ylabel("No. of events per sec")
-	plt.grid()
+	#plt.xlabel("SNR")
+	#plt.ylabel("No. of events per sec")
+	#plt.grid()
 	#plt.savefig("FAP_only_noise.png", dpi=600)
 	#np.savetxt('first_step_nlouder_data.txt', [thresholds, n_louder/128])
 	return snrs, counts
 
-def hierarchical_distribution(ax, SNR, og_snr, og_counts, no_realizations, cutoff, conv_tol):
+def hierarchical_distribution(ax, SNR, og_snr, og_counts, cutoff, conv_tol, min_cutoff_ind):
 	SNR = np.array(SNR)
 	snrs  = np.sort(SNR)
 	counts = np.arange(len(snrs), 0, -1)
 
-	conv_SNR, conv_triggers = find_convergent_SNR(og_snr, snrs, og_counts, counts, conv_tol)
-	#ax.plot(snrs, counts, label='Hierarchical %0.1f' %cutoff)
+	conv_SNR, conv_triggers = find_convergent_SNR(og_snr, snrs, og_counts, counts, cutoff, conv_tol)
+	#conv_SNR, conv_triggers = find_target_SNR(og_snr, snrs, og_counts, counts, cutoff, conv_tol, min_cutoff_ind)
+
+	ax.plot(snrs, counts, label='Hierarchical %0.1f' %cutoff)
 #	plt.xlabel("SNR")
 #	plt.ylabel("No. of events per sec")
 #	plt.grid()

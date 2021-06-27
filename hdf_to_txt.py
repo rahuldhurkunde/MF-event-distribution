@@ -4,7 +4,7 @@ import numpy as np
 
 no = sys.argv[1]
 
-filename = 'noise_%s.hdf' %no
+filename = 'noisefiles/hdfonly/noise_%s.hdf' %no
 f = h5py.File(filename, 'r')
 
 #Get the data

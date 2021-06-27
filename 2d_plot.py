@@ -30,8 +30,28 @@ def compute_cost(pca, N, templates, window, cutoff, target, triggers, marker):
 	print("Min cost for window", window, np.min(cost))
 	#plt.plot(target, cost, label=window)
 
+def plot_cutoff_vs_target(window_array, marker):
+	for i in window_array:
+		filename = "conv_SNRs/txtfiles/conv_SNR_%s_1" %i
+		a = np.loadtxt(filename)
+		conv_SNR = []
+		conv_cutoff = []
+		for k in range(len(a)):
+			conv_SNR.append(a[k][1])
+			conv_cutoff.append(a[k][0])
+		plt.plot(conv_cutoff, conv_SNR, linestyle = '', marker = next(marker), label=i)
+	plt.legend()
+	plt.grid()
+	plt.xlabel('Cutoff')
+	plt.ylabel('Target')
+	plt.savefig('cutoff_vs_target.png', dpi = 600)
+	plt.show()
+
 window_array = [2, 4, 8, 16, 32]
-marker = itertools.cycle(('+', 'o', '*')) 
+marker = itertools.cycle(('+', 'x', '*', '^', '_')) 
+
+plot_cutoff_vs_target(window_array, marker)
+exit()
 for k in window_array:
 	window = k
 	pca = 556

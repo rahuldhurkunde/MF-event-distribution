@@ -5,6 +5,10 @@ import pycbc
 from pycbc import events
 import numpy as np
 import time
+import sys
+import h5py
+import time
+import pandas as pd
 
 
 def stats_indices(SNR, bins):
@@ -36,21 +40,28 @@ def find_target_SNR(og_snr, red_snr, og_counts, red_counts, first_step_cutoff, t
 
 
 def find_convergent_SNR(og_snr, red_snr, og_counts, red_counts, first_step_cutoff, tolerance):
-	x_new = np.linspace(np.min(red_snr), np.max(red_snr), 200)
-	f_red = scipy.interpolate.interp1d(red_snr, red_counts)
-	f_og = scipy.interpolate.interp1d(og_snr, og_counts)
-	for i in range(len(x_new)):
-		if (  ( 1 - f_red(x_new[i])/f_og(x_new[i]) ) < tolerance):
-			#plt.axvline(x = x_new[i], color='red')
-			#print ('Convergent SNR is ', x_new[i], 'No. of triggers', f_red(x_new[i]))
-			conv_SNR = x_new[i]
-			conv_triggers = f_red(x_new[i])
-			break
-		elif (i == (len(x_new)) -1):
-			print("SNRs did not converge for SNR %f" %first_step_cutoff)
-			print("Returning zero")
-			conv_SNR = 0 
-			conv_triggers = 0
+	if (round(np.max(red_snr),4) > round(np.max(og_snr),4)):
+		print("Error for cutoff", first_step_cutoff, "CHECK FLOATING PRECESSION OF MAX. SNRS")
+		print(np.max(red_snr), np.max(og_snr))
+		conv_SNR = 0 
+		conv_triggers = 0
+		exit()	
+	else:
+		x_new = np.linspace(np.min(red_snr), np.max(red_snr), 300)
+		f_red = scipy.interpolate.interp1d(red_snr, red_counts)
+		f_og = scipy.interpolate.interp1d(og_snr, og_counts, fill_value="extrapolate")	
+		#print("YOLO", np.max(red_snr), np.max(og_snr))
+		for i in range(len(x_new)):
+			if (  ( 1 - f_red(x_new[i])/f_og(x_new[i]) ) < tolerance):
+				#plt.axvline(x = x_new[i], color='red')
+				conv_SNR = x_new[i]
+				conv_triggers = f_red(x_new[i])
+				break
+			elif (i == (len(x_new)) -1):
+				print("SNRs did not converge for SNR %f" %first_step_cutoff)
+				print("Returning zero")
+				conv_SNR = 0 
+				conv_triggers = 0
 			
 	return conv_SNR, conv_triggers 
 
@@ -68,7 +79,6 @@ def accumulate_triggers_hierarchical(SNR, filename, index, window):
 
 def accumulate_triggers(SNR, filename):
 	a = np.loadtxt(filename)
-	temp = np.zeros(len(a))
 	for i in range(len(a)):
 		SNR.append(a[i])
 	#SNR.append(temp)
@@ -79,7 +89,7 @@ def non_hierarchical_distribution(ax, SNR):
 	#thresholds = np.linspace(np.min(SNR), np.max(SNR), 1000)
 	snrs  = np.sort(SNR)
 	counts = np.arange(len(snrs), 0, -1)
-	ax.plot(snrs, counts,  color='black', label = 'Without hierarchical')
+	#ax.plot(snrs, counts,  color='black', label = 'Without hierarchical')
 	#plt.xlabel("SNR")
 	#plt.ylabel("No. of events per sec")
 	#plt.grid()
@@ -87,7 +97,7 @@ def non_hierarchical_distribution(ax, SNR):
 	#np.savetxt('first_step_nlouder_data.txt', [thresholds, n_louder/128])
 	return snrs, counts
 
-def hierarchical_distribution(ax, SNR, og_snr, og_counts, cutoff, conv_tol, min_cutoff_ind):
+def hierarchical_distribution(SNR, og_snr, og_counts, cutoff, conv_tol, min_cutoff_ind):
 	SNR = np.array(SNR)
 	snrs  = np.sort(SNR)
 	counts = np.arange(len(snrs), 0, -1)
@@ -95,7 +105,7 @@ def hierarchical_distribution(ax, SNR, og_snr, og_counts, cutoff, conv_tol, min_
 	conv_SNR, conv_triggers = find_convergent_SNR(og_snr, snrs, og_counts, counts, cutoff, conv_tol)
 	#conv_SNR, conv_triggers = find_target_SNR(og_snr, snrs, og_counts, counts, cutoff, conv_tol, min_cutoff_ind)
 
-	ax.plot(snrs, counts, label='Hierarchical %0.1f' %cutoff)
+	#ax.plot(snrs, counts, label='Hierarchical')
 #	plt.xlabel("SNR")
 #	plt.ylabel("No. of events per sec")
 #	plt.grid()
@@ -136,3 +146,31 @@ def theoretical_distribution_reduced(ax, no_realizations, window):
 	ax.plot(thresholds, n_louder/128, color='blue', label = 'Theoretical_red') 
 	#plt.savefig("FAP_theoretical.png", dpi=600)
 	#np.savetxt('theoretical_nlouder.txt', [thresholds, n_louder/128])
+
+def save_hdf(snr, filename):
+	with h5py.File(filename, 'w') as f:
+	    f.create_dataset("snr", data=snr)	
+	f.close()
+	
+def read_hdf(filename):
+	hf = h5py.File(filename, 'r')
+	temp = hf.get('snr')
+	snr = np.array(temp)
+	return snr
+
+#def accumulate_hdfs(no_realizations, window, part):
+def accumulate_hdfs(no_realizations, window):
+	avg_SNR = []
+	SNR_hierarchical = []
+	#for k in range(part*no_realizations, (part+1)*no_realizations):
+	for k in range(no_realizations):
+		print(k)
+		avg_hdf = "hierarchical_matches/best_bank/hdf_%s/avg_%s_%s.hdf5" %(window, window, k)
+		avg = read_hdf(avg_hdf)
+		avg_SNR = np.append(avg_SNR, avg)
+
+		triggers_hdf = "hierarchical_matches/best_bank/hdf_%s/triggers_%s_%s.hdf5" %(window, window, k)
+		triggers = read_hdf(triggers_hdf)
+		SNR_hierarchical = np.append(SNR_hierarchical, triggers)
+	return avg_SNR, SNR_hierarchical
+

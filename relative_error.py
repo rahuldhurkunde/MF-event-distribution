@@ -151,6 +151,3 @@ plt.savefig("Rel_err.png", dpi=600)
 plt.show()
 end = time.time()
 print("Cutoff time = ", end-start)
-
-
-

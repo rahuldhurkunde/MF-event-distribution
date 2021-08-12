@@ -50,7 +50,7 @@ def accumulate_hdfs(no_realizations, window):
 		SNR_hierarchical = np.append(SNR_hierarchical, triggers)
 	return avg_SNR, SNR_hierarchical
 
-window = 32 
+window = 2 
 no_realizations = 5000 
 
 convert_to_hdf(no_realizations, window)

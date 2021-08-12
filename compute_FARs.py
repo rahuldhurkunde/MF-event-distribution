@@ -13,6 +13,8 @@ import pandas as pd
 #from tqdm import tqdm
 from guppy import hpy
 h = hpy()
+plt.rcParams.update({
+    "text.usetex": True})
 
 #def write_non_hierarchical(ax, no_realizations, bank, non_hierarchical_file, part):
 def write_non_hierarchical(ax, no_realizations, bank, non_hierarchical_file):
@@ -106,7 +108,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 
 start_global = time.time()
-window = 4 
+window = 2 
 no_realizations = 5000
 part = 2 
 min_cutoff_ind = 1 

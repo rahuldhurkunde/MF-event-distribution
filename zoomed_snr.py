@@ -49,17 +49,18 @@ a = np.loadtxt('zoomed/snr_1_0')
 b = np.loadtxt('zoomed/avg_16_0')
 c = np.loadtxt('zoomed/triggers_16_0')
 
+index = 69
 ax1 = plt.subplot(axes[0])
 ax1.grid()
 ax1.plot(xaxis, a)
 trigger_indices, trigger_snrs = get_triggers(a, threshold)
 index_times = [x/srate for x in trigger_indices]
-ax1.set_xlim([58.984, 59.082])
+ax1.set_xlim([87.8, 87.9])
 ax1.set_ylim([0, 5.0])
-ax1.axvline(x=(trigger_indices[48]-w/2)/srate, color='lime', linestyle = '--')
-ax1.axvline(x=(trigger_indices[48]+w/2)/srate, color = 'lime', linestyle = '--')
+ax1.axvline(x=(trigger_indices[index]-w+1)/srate, color='lime', linestyle = '--')
+ax1.axvline(x=(trigger_indices[index]+1)/srate, color = 'lime', linestyle = '--')
 ax1.plot(index_times, trigger_snrs, 'x', color = 'red')
-print(trigger_indices[48])
+print(trigger_indices[index])
 
 avg = []
 for i in range(len(b)):
@@ -68,13 +69,13 @@ for i in range(len(b)):
 
 ax2 = plt.subplot(axes[1])
 ax2.grid()
-ax2.set_xlim([58.984, 59.082])
+ax2.set_xlim([87.8, 87.9])
 ax2.set_ylim([0, 5.0])
 ax2.plot(xaxis, avg)
 ind = np.zeros(w)
 temp_avg = np.zeros(w)
 for i in range(w):
-	ind[i] = trigger_indices[48] - int(w/2) + i
+	ind[i] = trigger_indices[index] - int(w) + i + 1 
 	temp_avg[i] = avg[int(ind[i])]
 ax2.plot(ind/srate, temp_avg, color='red')
 ax2.set_ylabel('SNR')
@@ -85,11 +86,11 @@ for i in range(w):
 
 ax3 = plt.subplot(axes[2])
 ax3.grid()
-ax3.set_xlim([58.984, 59.082])
+ax3.set_xlim([87.8, 87.9])
 ax3.set_ylim([0, 5.0])
 ax3.plot(ind/srate, zoomed)
-ax3.axvline(x=(trigger_indices[48]-w/2)/srate, color='lime', linestyle = '--')
-ax3.axvline(x=(trigger_indices[48]+w/2)/srate, color = 'lime', linestyle = '--')
+ax3.axvline(x=(trigger_indices[index]-w+1)/srate, color='lime', linestyle = '--')
+ax3.axvline(x=(trigger_indices[index]+1)/srate, color = 'lime', linestyle = '--')
 
 plt.xlabel('time (s)')
 plt.savefig('zoomed.png', dpi = 600)

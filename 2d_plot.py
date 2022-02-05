@@ -42,8 +42,8 @@ def fit_curve(cutoff, target):
 def cutoff_vs_triggers(cutoff, counts, window, marker, colors, N, index):
 	#value, indices = np.unique(target, return_index=True)
 	plt.plot(cutoff, counts/N*2048, linestyle=" ", color = colors[index], marker=marker[index], label = 'w = %s' %window)	
-	plt.ylabel('$f (\omega,$'r'$\rho_{cut}) sec^{-1}$')
-	plt.xlabel(r'$\rho_{I}$')
+	plt.ylabel('$f (\omega,$'r'$\rho_{I}) sec^{-1}$', fontsize = 12)
+	plt.xlabel(r'$\rho_{I}$', fontsize = 12)
 	plt.yscale('log')
 	plt.grid()
 
@@ -52,8 +52,8 @@ def cutoff_vs_target(cutoff, target, window, marker, colors, index):
 	value, indices = np.unique(target, return_index=True)
 	plt.plot(cutoff[indices], value, linestyle=" ", color = colors[index], marker=marker[index], label = 'w = %s' %window)
 	plt.ylim(1.8, 6)
-	plt.ylabel('Target SNR')
-	plt.xlabel(r'$\rho_{I}$')
+	plt.ylabel('Target SNR', fontsize = 12)
+	plt.xlabel(r'$\rho_{I}$', fontsize = 12)
 	plt.grid()
 
 def compute_cost(axes, pca, N, templates, window, cutoff, target, triggers, marker, colors, index):
@@ -66,7 +66,7 @@ def compute_cost(axes, pca, N, templates, window, cutoff, target, triggers, mark
 	for i in range(len(triggers)):
 		ein = templates*N/window*(5*np.log(N/window)+6+2/window)/10**15/fft_cost
 		#ein = (4*pca*N*templates/window/2 + 5*pca*N*np.log(N) + 26*pca*N) / 10**15 
-		zwei = (4*pca*window*triggers[i]*templates) / 10**15 /fft_cost 
+		zwei = (4*pca*window*triggers[i]*templates + N*pca*(np.log(N)+6)) / 10**15 /fft_cost 
 		ganz = (ein + zwei) 
 		first.append(ein)
 		second.append(zwei)
@@ -164,7 +164,6 @@ for k in window_array:
 
 plt.grid()
 #plt.legend()
-#plt.savefig('Costs_vs_target_snr.png', dpi = 600)
 #plt.savefig('HIGH_cutoff_vs_target.png', dpi = 600)
 #plt.savefig('Triggers_vs_cutoff.png', dpi=600)
 plt.savefig('Final_costs.png', dpi=600)
